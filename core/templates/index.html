@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMate Chat</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 1300px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-container {
+            flex: 1;
+            margin-right: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2, h3 {
+            font-size: 24px;
+            color: #4e73df;
+            margin-bottom: 16px;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e1e4e8;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            max-width: 75%;
+        }
+
+        .user-message {
+            background-color: #d1e7ff;
+            align-self: flex-start;
+        }
+
+        .bot-message {
+            background-color: #e0ffe0;
+            align-self: flex-end;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d1d3e2;
+            font-size: 16px;
+            resize: none;
+            transition: border 0.3s ease-in-out;
+        }
+
+        textarea:focus {
+            border: 1px solid #4e73df;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 18px;
+            background-color: #4e73df;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2e59d9;
+        }
+
+        button:active {
+            background-color: #2254a1;
+        }
+
+        .reminder-item {
+            background-color: #d4edda;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .student-details-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+
+        .student-details-container input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            font-size: 16px;
+        }
+
+        .student-details-container button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        .student-details-container button:hover {
+            background-color: #218838;
+        }
+
+        .reminders-section {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Chat Section -->
+        <div class="chat-container">
+            <h2>CampusMate Chat</h2>
+
+            <!-- Chat box -->
+            <div id="chat-box" class="chat-box"></div>
+
+            <!-- Chat input form -->
+            <form id="chat-form">
+                <textarea id="chat-input" name="message" placeholder="Type your message..."></textarea>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+
+        <!-- Sidebar Section for Reminders and Student Details -->
+        <div class="sidebar">
+            <div class="reminders-section">
+                <h3>Reminders</h3>
+                <div id="reminders-list"></div>
+            </div>
+
+            <div class="student-details-container">
+                <h3>Student Information</h3>
+                <input type="text" id="name" placeholder="Enter Name">
+                <input type="text" id="roll-number" placeholder="Enter Roll Number">
+                <button onclick="saveStudentInfo()">Save Details</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatBox = document.getElementById('chat-box');
+        const remindersList = document.getElementById('reminders-list');
+
+        const reminders = [];
+
+        // Function to handle reminders
+        function handleReminders(message) {
+            if (message.toLowerCase().includes("set reminder")) {
+                const reminderTime = message.match(/\d{1,2}(:\d{2})?/); // Check for time format
+                if (reminderTime) {
+                    reminders.push({ time: reminderTime[0], task: message.replace("set reminder", "").trim() });
+                    updateRemindersList();
+                    return `Reminder set for ${reminderTime[0]}: ${message.replace("set reminder", "").trim()}`;
+                } else {
+                    return "Please provide a valid time for the reminder!";
+                }
+            }
+            return null;
+        }
+
+        // Update the displayed reminders list
+        function updateRemindersList() {
+            remindersList.innerHTML = '';
+            reminders.forEach(reminder => {
+                const reminderElement = document.createElement('div');
+                reminderElement.classList.add('reminder-item');
+                reminderElement.innerText = `${reminder.time}: ${reminder.task}`;
+                remindersList.appendChild(reminderElement);
+            });
+        }
+
+        // Event listener for form submission
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const chatMessage = chatInput.value.trim();
+
+            // If the message is empty, do not process
+            if (!chatMessage) {
+                return;
+            }
+
+            // Display the user's message in the chat box
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.innerText = chatMessage;
+            chatBox.appendChild(userMessage);
+
+            // Clear the input field
+            chatInput.value = '';
+
+            // Scroll to the bottom of the chat box
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Handle reminders
+            let response = handleReminders(chatMessage);
+
+            // If not a reminder, send the message to the backend
+            if (!response) {
+                // For now, just simulate bot response
+                response = "I am here to assist you!";
+            }
+
+            // Display the response
+            const botMessage = document.createElement('div');
+            botMessage.classList.add('message', 'bot-message');
+            botMessage.innerText = response;
+            chatBox.appendChild(botMessage);
+
+            // Scroll to the bottom of the chat box
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // Function to save student details
+        function saveStudentInfo() {
+            const name = document.getElementById('name').value;
+            const rollNumber = document.getElementById('roll-number').value;
+
+            if (!name || !rollNumber) {
+                alert("Please fill in both fields.");
+                return;
+            }
+
+            localStorage.setItem('studentName', name);
+            localStorage.setItem('rollNumber', rollNumber);
+
+            alert("Student details saved successfully!");
+        }
+    </script>
+
+</body>
+</html>
